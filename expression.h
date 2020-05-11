@@ -19,7 +19,7 @@ namespace expression {
       ~Constant() override = default;
 
       decltype(auto) expr() const { return _value; }
-      std::string to_string() const override { return ::to_string(_value); }
+      std::string to_string() const override { return std::to_string(_value); }
 
     private:
       const T _value;

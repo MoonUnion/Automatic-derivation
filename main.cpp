@@ -8,6 +8,6 @@ int main() {
   auto a = e::Constant(1);
   auto b = e::Variable<int>("x");
   auto expr = e::Add(&a, &b);
-  std::cout << "Hello, World!" << std::endl;
+  std::cout << expr.to_string() << std::endl;
   return 0;
 }
