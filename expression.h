@@ -1,13 +1,16 @@
 #ifndef AUTOMATIC_DERIVATION_EXPRESSION_H
 #define AUTOMATIC_DERIVATION_EXPRESSION_H
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <typeinfo>
+#include <utility>
 
 namespace expression {
   class Expr {
     public:
+      using ptr = std::shared_ptr<Expr>;
       virtual ~Expr() = default;
       virtual std::string to_string() const { return ""; }
   };
@@ -48,7 +51,7 @@ namespace expression {
   template<>
   class Operator<1> : public Expr {
     public:
-      explicit Operator(Expr *expr) : _expr(expr) {}
+      explicit Operator(ptr expr) : _expr(std::move(expr)) {}
       ~Operator() override = default;
 
       decltype(auto) expr() { return _expr; }
@@ -58,13 +61,13 @@ namespace expression {
       }
 
     private:
-      Expr *_expr;
+      ptr _expr;
   };
 
   template<>
   class Operator<2> : public Expr {
     public:
-      Operator(Expr *expr1, Expr *expr2) : _expr1(expr1), _expr2(expr2) {}
+      Operator(ptr expr1, ptr expr2) : _expr1(std::move(expr1)), _expr2(std::move(expr2)) {}
       ~Operator() override = default;
 
       decltype(auto) expr_left() { return _expr1; }
@@ -76,20 +79,20 @@ namespace expression {
       }
 
     private:
-      Expr *_expr1;
-      Expr *_expr2;
+      ptr _expr1;
+      ptr _expr2;
   };
 
   class Negative : public Operator<1> {
     public:
-      explicit Negative(Expr *expr) : Operator(expr) {}
+      explicit Negative(ptr expr) : Operator(std::move(expr)) {}
       ~Negative() override = default;
       std::string to_string() const override { return "-" + expr()->to_string(); }
   };
 
   class Sine : public Operator<1> {
     public:
-      explicit Sine(Expr *expr) : Operator(expr) {}
+      explicit Sine(ptr expr) : Operator(std::move(expr)) {}
       ~Sine() override = default;
       std::string to_string() const override {
           return "sin(" + expr()->to_string() + ")";
@@ -98,7 +101,7 @@ namespace expression {
 
   class Cosine : public Operator<1> {
     public:
-      explicit Cosine(Expr *expr) : Operator(expr) {}
+      explicit Cosine(ptr expr) : Operator(std::move(expr)) {}
       ~Cosine() override = default;
       std::string to_string() const override {
           return "cos(" + expr()->to_string() + ")";
@@ -107,7 +110,7 @@ namespace expression {
 
   class Tangent : public Operator<1> {
     public:
-      explicit Tangent(Expr *expr) : Operator(expr) {}
+      explicit Tangent(ptr expr) : Operator(std::move(expr)) {}
       ~Tangent() override = default;
       std::string to_string() const override {
           return "tan(" + expr()->to_string() + ")";
@@ -116,7 +119,7 @@ namespace expression {
 
   class Add : public Operator<2> {
     public:
-      Add(Expr *expr1, Expr *expr2) : Operator(expr1, expr2) {}
+      Add(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
       ~Add() override = default;
       std::string to_string() const override {
           return expr_left()->to_string() + " + " + expr_right()->to_string();
@@ -125,7 +128,7 @@ namespace expression {
 
   class Minus : public Operator<2> {
     public:
-      Minus(Expr *expr1, Expr *expr2) : Operator(expr1, expr2) {}
+      Minus(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
       ~Minus() override = default;
       std::string to_string() const override {
           return expr_left()->to_string() + " - " + expr_right()->to_string();
@@ -134,7 +137,7 @@ namespace expression {
 
   class Multiply : public Operator<2> {
     public:
-      Multiply(Expr *expr1, Expr *expr2) : Operator(expr1, expr2) {}
+      Multiply(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
       ~Multiply() override = default;
       std::string to_string() const override {
           return expr_left()->to_string() + " * " + expr_right()->to_string();
@@ -143,7 +146,7 @@ namespace expression {
 
   class Divide : public Operator<2> {
     public:
-      Divide(Expr *expr1, Expr *expr2) : Operator(expr1, expr2) {}
+      Divide(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
       ~Divide() override = default;
       std::string to_string() const override {
           return expr_left()->to_string() + " / " + expr_right()->to_string();
