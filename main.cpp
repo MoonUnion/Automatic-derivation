@@ -5,10 +5,11 @@
 using namespace std;
 
 int main() {
-    namespace e = expression;
-    auto a = make_shared<e::Constant<int>>(1);
-    auto b = make_shared<e::Variable<int>>("x");
-    auto expr = make_shared<e::Add>(a, b);
-    std::cout << dynamic_pointer_cast<e::Add>(expr)->to_string() << std::endl;
-    return 0;
+  using namespace expression;
+  using t = ExprType;
+  auto a = make_const(1);
+  auto b = make_var<int>("x");
+  auto expr = make<t::add>(a, make<t::power>(make<t::sin>(make_const(2)), b));
+  std::cout << dynamic_pointer_cast<Add>(expr)->to_string() << std::endl;
+  return 0;
 }

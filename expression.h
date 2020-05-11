@@ -153,5 +153,81 @@ namespace expression {
       }
   };
 
+  class Power : public Operator<2> {
+    public:
+      Power(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+      ~Power() override = default;
+      std::string to_string() const override {
+          return expr_left()->to_string() + "^" + expr_right()->to_string();
+      }
+  };
+
+  class Logarithmic : public Operator<2> {
+    public:
+      Logarithmic(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+      ~Logarithmic() override = default;
+      std::string to_string() const override {
+          return "log " + expr_left()->to_string() + "(" + expr_right()->to_string() + ")";
+      }
+  };
+
+  enum class ExprType {
+      negative, sin, cos, tan, add, minus, mult, div, power, log, null
+  };
+
+  template<ExprType t = ExprType::null>
+  inline Expr::ptr make(const Expr::ptr &, const Expr::ptr & = nullptr) {
+      return nullptr;
+  }
+
+  template<class T>
+  inline Expr::ptr make_const(T value) {
+      return std::make_shared<Constant<T>>(value);
+  }
+  template<class T>
+  inline Expr::ptr make_var(std::string_view name) {
+      return std::make_shared<Variable<T>>(name);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::negative>(const Expr::ptr &expr, const Expr::ptr &) {
+      return std::make_shared<Negative>(expr);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::sin>(const Expr::ptr &expr, const Expr::ptr &) {
+      return std::make_shared<Sine>(expr);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::cos>(const Expr::ptr &expr, const Expr::ptr &) {
+      return std::make_shared<Cosine>(expr);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::tan>(const Expr::ptr &expr, const Expr::ptr &) {
+      return std::make_shared<Tangent>(expr);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::add>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Add>(left, right);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::minus>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Minus>(left, right);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::mult>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Multiply>(left, right);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::div>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Divide>(left, right);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::power>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Power>(left, right);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::log>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Logarithmic>(left, right);
+  }
+
 }  // namespace expression
 #endif  // AUTOMATIC_DERIVATION_EXPRESSION_H
