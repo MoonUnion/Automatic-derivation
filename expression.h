@@ -194,14 +194,29 @@ namespace expression {
       }
   };
 
-  class Multiply : public Operator<2> {
+  class Multiply2 : public Operator<2> {
     public:
-      Multiply(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
-      ~Multiply() override = default;
+      Multiply2(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+      ~Multiply2() override = default;
       std::string to_string() const override {
           return expr_left()->to_string() + " * " + expr_right()->to_string();
       }
   };
+    class Multiply : public Operator<-1> {
+    public:
+        explicit Multiply(const std::vector<ptr> &exprList) : Operator(exprList) {}
+        Multiply(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+        ~Multiply() override = default;
+        std::string to_string() const override {
+            std::string temp;
+            const auto &e = expr_list();
+            auto s = e.size() - 1;
+            for (size_t i = 0; i < s; ++i) {
+                temp += e[i]->to_string() + " * ";
+            }
+            return temp + e[s]->to_string();
+        }
+    };
 
   class Divide : public Operator<2> {
     public:
@@ -231,7 +246,7 @@ namespace expression {
   };
 
   enum class ExprType {
-      negative, sin, cos, tan, add, minus, add2, minus2, mult, div, power, log, null
+      negative, sin, cos, tan, add, minus, add2, minus2, mult, mult2, div, power, log, null
   };
 
   template<ExprType t>
@@ -282,9 +297,13 @@ namespace expression {
   inline Expr::ptr make<ExprType::minus>(const Expr::ptr &left, const Expr::ptr &right) {
       return std::make_shared<Minus>(left, right);
   }
+    template<>
+    inline Expr::ptr make<ExprType::mult>(const Expr::ptr &left, const Expr::ptr &right) {
+        return std::make_shared<Multiply>(left, right);
+    }
   template<>
-  inline Expr::ptr make<ExprType::mult>(const Expr::ptr &left, const Expr::ptr &right) {
-      return std::make_shared<Multiply>(left, right);
+  inline Expr::ptr make<ExprType::mult2>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Multiply2>(left, right);
   }
   template<>
   inline Expr::ptr make<ExprType::div>(const Expr::ptr &left, const Expr::ptr &right) {
