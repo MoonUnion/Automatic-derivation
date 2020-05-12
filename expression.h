@@ -6,6 +6,7 @@
 #include <string_view>
 #include <typeinfo>
 #include <utility>
+#include <vector>
 
 namespace expression {
   class Expr {
@@ -41,7 +42,7 @@ namespace expression {
       std::string _name;
   };
 
-  template<size_t args>
+  template<int args>
   class Operator : public Expr {
     public:
       Operator() = delete;
@@ -83,6 +84,32 @@ namespace expression {
       ptr _expr2;
   };
 
+  template<>
+  class Operator<-1> : public Expr {
+    public:
+      explicit Operator(std::vector<ptr> expr_list) : _expr_list(std::move(expr_list)) {}
+      explicit Operator(std::vector<ptr> &&expr_list) : _expr_list(std::move(expr_list)) {}
+      explicit Operator(ptr expr) : _expr_list{std::move(expr)} {}
+      Operator(ptr expr1, ptr expr2) : _expr_list{std::move(expr1), std::move(expr2)} {}
+
+      ~Operator() override = default;
+
+      void add(ptr expr) { _expr_list.push_back(std::move(expr)); }
+      decltype(auto) expr_list() { return _expr_list; }
+      decltype(auto) expr_list() const { return _expr_list; }
+      std::string to_string() const override {
+          std::string temp{"("};
+          auto s = _expr_list.size() - 1;
+          for (size_t i = 0; i < s; ++i) {
+              temp += _expr_list[i]->to_string() + " ? ";
+          }
+          return temp + _expr_list[s]->to_string() + ")";
+      }
+
+    private:
+      std::vector<ptr> _expr_list;
+  };
+
   class Negative : public Operator<1> {
     public:
       explicit Negative(ptr expr) : Operator(std::move(expr)) {}
@@ -117,21 +144,53 @@ namespace expression {
       }
   };
 
-  class Add : public Operator<2> {
+  class Add2 : public Operator<2> {
     public:
-      Add(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
-      ~Add() override = default;
+      Add2(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+      ~Add2() override = default;
       std::string to_string() const override {
           return expr_left()->to_string() + " + " + expr_right()->to_string();
       }
   };
 
-  class Minus : public Operator<2> {
+  class Add : public Operator<-1> {
     public:
+      explicit Add(const std::vector<ptr> &exprList) : Operator(exprList) {}
+      Add(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+      ~Add() override = default;
+      std::string to_string() const override {
+          std::string temp;
+          const auto &e = expr_list();
+          auto s = e.size() - 1;
+          for (size_t i = 0; i < s; ++i) {
+              temp += e[i]->to_string() + " + ";
+          }
+          return temp + e[s]->to_string();
+      }
+  };
+
+  class Minus2 : public Operator<2> {
+    public:
+      Minus2(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
+      ~Minus2() override = default;
+      std::string to_string() const override {
+          return expr_left()->to_string() + " - " + expr_right()->to_string();
+      }
+  };
+
+  class Minus : public Operator<-1> {
+    public:
+      explicit Minus(const std::vector<ptr> &exprList) : Operator(exprList) {}
       Minus(ptr expr1, ptr expr2) : Operator(std::move(expr1), std::move(expr2)) {}
       ~Minus() override = default;
       std::string to_string() const override {
-          return expr_left()->to_string() + " - " + expr_right()->to_string();
+          std::string temp;
+          const auto &e = expr_list();
+          auto s = e.size() - 1;
+          for (size_t i = 0; i < s; ++i) {
+              temp += e[i]->to_string() + " + ";
+          }
+          return temp + e[s]->to_string();
       }
   };
 
@@ -172,11 +231,11 @@ namespace expression {
   };
 
   enum class ExprType {
-      negative, sin, cos, tan, add, minus, mult, div, power, log, null
+      negative, sin, cos, tan, add, minus, add2, minus2, mult, div, power, log, null
   };
 
-  template<ExprType t = ExprType::null>
-  inline Expr::ptr make(const Expr::ptr &, const Expr::ptr & = nullptr) {
+  template<ExprType t = ExprType::null, class ...Args>
+  inline Expr::ptr make(const Expr::ptr &, const Args & ...) {
       return nullptr;
   }
 
@@ -189,20 +248,28 @@ namespace expression {
       return std::make_shared<Variable<T>>(name);
   }
   template<>
-  inline Expr::ptr make<ExprType::negative>(const Expr::ptr &expr, const Expr::ptr &) {
+  inline Expr::ptr make<ExprType::negative>(const Expr::ptr &expr) {
       return std::make_shared<Negative>(expr);
   }
   template<>
-  inline Expr::ptr make<ExprType::sin>(const Expr::ptr &expr, const Expr::ptr &) {
+  inline Expr::ptr make<ExprType::sin>(const Expr::ptr &expr) {
       return std::make_shared<Sine>(expr);
   }
   template<>
-  inline Expr::ptr make<ExprType::cos>(const Expr::ptr &expr, const Expr::ptr &) {
+  inline Expr::ptr make<ExprType::cos>(const Expr::ptr &expr) {
       return std::make_shared<Cosine>(expr);
   }
   template<>
-  inline Expr::ptr make<ExprType::tan>(const Expr::ptr &expr, const Expr::ptr &) {
+  inline Expr::ptr make<ExprType::tan>(const Expr::ptr &expr) {
       return std::make_shared<Tangent>(expr);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::add2>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Add2>(left, right);
+  }
+  template<>
+  inline Expr::ptr make<ExprType::minus2>(const Expr::ptr &left, const Expr::ptr &right) {
+      return std::make_shared<Minus2>(left, right);
   }
   template<>
   inline Expr::ptr make<ExprType::add>(const Expr::ptr &left, const Expr::ptr &right) {
