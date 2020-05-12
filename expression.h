@@ -234,11 +234,14 @@ namespace expression {
       negative, sin, cos, tan, add, minus, add2, minus2, mult, div, power, log, null
   };
 
-  template<ExprType t = ExprType::null, class ...Args>
-  inline Expr::ptr make(const Expr::ptr &, const Args & ...) {
+  template<ExprType t>
+  inline Expr::ptr make(const Expr::ptr &) {
       return nullptr;
   }
-
+  template<ExprType t>
+  inline Expr::ptr make(const Expr::ptr &, const Expr::ptr &) {
+      return nullptr;
+  }
   template<class T>
   inline Expr::ptr make_const(T value) {
       return std::make_shared<Constant<T>>(value);
